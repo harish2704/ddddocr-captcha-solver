@@ -59,23 +59,29 @@ async function findCaptcha() {
     'img[alt*="captcha"]',
     'img[id*="captcha"]',
     'img[class*="captcha"]',
-    'img[aria-label*="captcha"]'
+    'img[aria-label*="captcha"]',
+    '[id*="captcha_image"]',
+    '[id*="captcha-image"]'
   ];
 
   const captchaInputSelectors = [
-    'input[id*="captcha"]',
-    'input[name*="captcha"]',
-    'input[class*="captcha"]',
-    'input[placeholder*="captcha"]',
-    'input[aria-label*="captcha"]',
-    'input[type="text"][maxlength="6"]', // Common for 4-6 digit captchas
-    'input[type="text"][pattern="[a-zA-Z0-9]{4,6}"]'
+    'input[id*="captcha"]:not([readonly])',
+    'input[name*="captcha"]:not([readonly])',
+    'input[class*="captcha"]:not([readonly])',
+    'input[placeholder*="captcha"]:not([readonly])',
+    'input[aria-label*="captcha"]:not([readonly])',
+    'input[type="text"][maxlength="6"]:not([readonly])', // Common for 4-6 digit captchas
+    'input[type="text"][pattern="[a-zA-Z0-9]{4,6}"]:not([readonly])'
   ];
 
-  let captchaImage = null;
+  let captchaImage = null, captchaImageData = null;
   for (const selector of captchaImageSelectors) {
     captchaImage = document.querySelector(selector);
-    if (captchaImage) break;
+    if (captchaImage) {
+      console.log('Found captcha image:', captchaImage);
+      captchaImageData = await modernScreenshot.domToDataUrl(captchaImage)
+      break;
+    }
   }
 
   if (!captchaImage) {
@@ -108,7 +114,7 @@ async function findCaptcha() {
     return null;
   }
 
-  return { image: captchaImage, input: captchaInput };
+  return { image: captchaImageData, input: captchaInput };
 }
 
 /**
@@ -120,11 +126,10 @@ async function runCaptchaBreaker() {
 
   if (captchaElements) {
     const { image, input } = captchaElements;
-    console.log('Found captcha image:', image);
     console.log('Found captcha input:', input);
 
     try {
-      const imageDataUrl = await getImageDataUrl(image);
+      const imageDataUrl = image;
       console.log('Sending captcha image to background script for solving...');
       const response = await chrome.runtime.sendMessage({
         action: 'solveCaptcha',
@@ -161,3 +166,4 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true; // Indicate that sendResponse will be called asynchronously
   }
 });
+

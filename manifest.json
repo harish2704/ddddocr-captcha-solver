@@ -18,7 +18,8 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content.js"]
+      "js": ["content.js", "modern-screenshot.js"],
+      "run_at": "document_idle"
     }
   ],
   "action": {
